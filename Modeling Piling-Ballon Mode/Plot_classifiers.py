@@ -5,7 +5,7 @@ from joblib import load
 from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
 
-from Functions import get_data_fromNPZ, get_data_fromDAT, get_isoline
+from Functions import get_data_fromNPZ, get_data_fromDAT, get_isoline, pack_df_fromArrays
 
 models_dir = "models/"
 list_df_files = list(filter(lambda x: ".joblib" in x, os.listdir(models_dir)))
@@ -34,8 +34,26 @@ datasets = [
                            "B": 0.8}, verbose=False)
 ]
 
-figure = plt.figure(figsize=(27, 9))
+n_new = 20j
+x_min, x_max = 0.01, 0.15
+y_min, y_max = 0.025, 6.
+
+xgrid = np.mgrid[x_min:x_max:n_new, y_min:y_max:n_new]
+xflat = xgrid.reshape(2, -1).T
+x, y = xflat[:, 0], xflat[:, 1]
+
+growth = np.zeros((x.shape[0], y.shape[0]))
+new_df = pack_df_fromArrays({"A": x,
+                             "P": y,
+                             "growth": growth})
+datasets.append((0.25, 1.87, 450, 0.7, x, y, growth, new_df))
+datasets.append((0.35, 1.83, 350, 0.75, x, y, growth, new_df))
+datasets.append((0.2, 1.9, 300, 0.9, x, y, growth, new_df))
+
+figure = plt.figure(figsize=(40, 20))
 i = 1
+
+colorbars = []
 
 for ds_cnt, ds in enumerate(datasets):
     sigma, kappa, I, B, x, y, growth, df = ds
@@ -50,13 +68,17 @@ for ds_cnt, ds in enumerate(datasets):
     ax.set_ylabel(f"$\\sigma$={sigma}, $\\kappa$={kappa}, $I$={I} $kA$, $B$={B} $T$")
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(y_min, y_max)
+
+    colorbars.append((pcm, ax))
+
     i += 1
 
     x_, y_ = np.meshgrid(x, y)
     xobs = np.stack([x_.flat, y_.flat], axis=1)
 
     growth_edge = 0.1
-    plot_x, plot_y, plot_z = get_isoline(df.growth.to_numpy(), df[["A", "P", "growth"]].to_numpy(), growth_edge)
+    if np.count_nonzero(df.growth.to_numpy()) > 0:
+        plot_x, plot_y, plot_z = get_isoline(df.growth.to_numpy(), df[["A", "P", "growth"]].to_numpy(), growth_edge)
 
     n_new = 100j
     xgrid = np.mgrid[x_.min():x_.max():n_new, y_.min():y_.max():n_new]
@@ -76,14 +98,20 @@ for ds_cnt, ds in enumerate(datasets):
         ygrid = yflat.reshape(int(n_new.imag), int(n_new.imag))
 
         p = ax.pcolormesh(*xgrid, ygrid, shading='gouraud', vmin=0., vmax=1., cmap='gist_yarg')
-        ax.plot(plot_x, plot_y, marker=".", c="orange")
+        if np.count_nonzero(df.growth.to_numpy()) > 0:
+            ax.plot(plot_x, plot_y, marker=".", c="orange", label=f"Isoline from DS: $\\gamma={growth_edge}$")
+            ax.legend(loc="lower right")
 
-        ax.set_title(f"{name}\n" + f"$\\sigma$={sigma}, $\\kappa$={kappa}, $I$={I} $kA$, $B$={B} $T$\n" +
-                     f"Isoline by growth: {growth_edge}\n")
+        if ds_cnt == 0:
+            ax.set_title(f"{name}")
+
         ax.set_xlim(x_min, x_max)
         ax.set_ylim(y_min, y_max)
         i += 1
 
-# figure.colorbar(p)
+    colorbars.append((p, ax))
+
+for p_i, ax_i in colorbars:
+    figure.colorbar(p_i, ax=ax_i)
 plt.tight_layout()
 plt.show()
