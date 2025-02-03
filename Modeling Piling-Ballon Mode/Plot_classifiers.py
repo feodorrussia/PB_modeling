@@ -8,7 +8,9 @@ from matplotlib.colors import ListedColormap
 from Functions import get_data_fromNPZ, get_data_fromDAT, get_isoline, pack_df_fromArrays
 
 models_dir = "models/"
-list_df_files = list(filter(lambda x: ".joblib" in x, os.listdir(models_dir)))
+list_df_files = ["MLP_classifier-2L_s-wo_aug-all.joblib",
+                 "MLP_classifier-2L_s-aug-h_l.joblib"]
+# list(filter(lambda x: ".joblib" in x, os.listdir(models_dir)))
 
 names = []
 classifiers = []
@@ -46,11 +48,22 @@ growth = np.zeros((x.shape[0], y.shape[0]))
 new_df = pack_df_fromArrays({"A": x,
                              "P": y,
                              "growth": growth})
-datasets.append((0.25, 1.87, 450, 0.7, x, y, growth, new_df))
-datasets.append((0.35, 1.83, 350, 0.75, x, y, growth, new_df))
-datasets.append((0.2, 1.9, 300, 0.9, x, y, growth, new_df))
 
-figure = plt.figure(figsize=(40, 20))
+datasets.append((0.35, 1.83, 250, 0.7, x, y, growth, new_df))
+datasets.append((0.35, 1.83, 350, 0.7, x, y, growth, new_df))
+datasets.append((0.35, 1.83, 400, 0.7, x, y, growth, new_df))
+datasets.append((0.35, 1.83, 450, 0.7, x, y, growth, new_df))
+datasets.append((0.35, 1.83, 500, 0.6, x, y, growth, new_df))
+
+datasets.append((0.35, 1.83, 350, 0.6, x, y, growth, new_df))
+datasets.append((0.35, 1.83, 350, 0.65, x, y, growth, new_df))
+datasets.append((0.35, 1.83, 350, 0.7, x, y, growth, new_df))
+datasets.append((0.35, 1.83, 350, 0.75, x, y, growth, new_df))
+datasets.append((0.35, 1.83, 350, 0.8, x, y, growth, new_df))
+
+coeff_x, coeff_y = 3.5, 3
+width, height = int((len(classifiers) + 1) * coeff_x), int((len(datasets) + 0) * coeff_x)
+figure = plt.figure(figsize=(width, height))
 i = 1
 
 colorbars = []
