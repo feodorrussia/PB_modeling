@@ -8,9 +8,9 @@ from matplotlib.colors import ListedColormap
 from Functions import get_data_fromNPZ, get_data_fromDAT, get_isoline, pack_df_fromArrays
 
 models_dir = "models/"
-list_df_files = ["MLP_classifier-2L_s-wo_aug-all.joblib",
-                 "MLP_classifier-2L_s-aug-h_l.joblib"]
-# list(filter(lambda x: ".joblib" in x, os.listdir(models_dir)))
+list_df_files = list(filter(lambda x: ".joblib" in x, os.listdir(models_dir)))
+#  ["MLP_classifier-2L_s-wo_aug-all.joblib",
+#                  "MLP_classifier-2L_s-aug-h_l.joblib"]
 
 names = []
 classifiers = []
@@ -49,17 +49,17 @@ new_df = pack_df_fromArrays({"A": x,
                              "P": y,
                              "growth": growth})
 
-datasets.append((0.35, 1.83, 250, 0.7, x, y, growth, new_df))
-datasets.append((0.35, 1.83, 350, 0.7, x, y, growth, new_df))
-datasets.append((0.35, 1.83, 400, 0.7, x, y, growth, new_df))
-datasets.append((0.35, 1.83, 450, 0.7, x, y, growth, new_df))
-datasets.append((0.35, 1.83, 500, 0.6, x, y, growth, new_df))
-
-datasets.append((0.35, 1.83, 350, 0.6, x, y, growth, new_df))
-datasets.append((0.35, 1.83, 350, 0.65, x, y, growth, new_df))
-datasets.append((0.35, 1.83, 350, 0.7, x, y, growth, new_df))
-datasets.append((0.35, 1.83, 350, 0.75, x, y, growth, new_df))
-datasets.append((0.35, 1.83, 350, 0.8, x, y, growth, new_df))
+# datasets.append((0.35, 1.83, 250, 0.7, x, y, growth, new_df))
+# datasets.append((0.35, 1.83, 350, 0.7, x, y, growth, new_df))
+# datasets.append((0.35, 1.83, 400, 0.7, x, y, growth, new_df))
+# datasets.append((0.35, 1.83, 450, 0.7, x, y, growth, new_df))
+# datasets.append((0.35, 1.83, 500, 0.6, x, y, growth, new_df))
+#
+# datasets.append((0.35, 1.83, 350, 0.6, x, y, growth, new_df))
+# datasets.append((0.35, 1.83, 350, 0.65, x, y, growth, new_df))
+# datasets.append((0.35, 1.83, 350, 0.7, x, y, growth, new_df))
+# datasets.append((0.35, 1.83, 350, 0.75, x, y, growth, new_df))
+# datasets.append((0.35, 1.83, 350, 0.8, x, y, growth, new_df))
 
 coeff_x, coeff_y = 3.5, 3
 width, height = int((len(classifiers) + 1) * coeff_x), int((len(datasets) + 0) * coeff_x)
@@ -77,12 +77,13 @@ for ds_cnt, ds in enumerate(datasets):
     ax = plt.subplot(len(datasets), len(classifiers) + 1, i)
     if ds_cnt == 0:
         ax.set_title("Input data")
-    pcm = ax.pcolormesh(x, y, growth.T, cmap='YlGnBu')
+
+    vmin, vmax = growth.min(), growth.max()
+    pcm = ax.pcolormesh(x, y, growth.T, vmin=vmin, vmax=vmax, cmap='YlGnBu')
+
     ax.set_ylabel(f"$\\sigma$={sigma}, $\\kappa$={kappa}, $I$={I} $kA$, $B$={B} $T$")
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(y_min, y_max)
-
-    colorbars.append((pcm, ax))
 
     i += 1
 
@@ -106,11 +107,11 @@ for ds_cnt, ds in enumerate(datasets):
     for name, clf in zip(names, classifiers):
         ax = plt.subplot(len(datasets), len(classifiers) + 1, i)
 
-        probs = clf.predict_proba(X)
-        yflat = probs[:, 1]  # > probs[:, 0]).astype(int)
+        probs = clf.predict(X)
+        yflat = probs  # > probs[:, 0]).astype(int)
         ygrid = yflat.reshape(int(n_new.imag), int(n_new.imag))
 
-        p = ax.pcolormesh(*xgrid, ygrid, shading='gouraud', vmin=0., vmax=1., cmap='gist_yarg')
+        ax.pcolormesh(*xgrid, ygrid, shading='gouraud', vmin=vmin, vmax=vmax, cmap='YlGnBu')
         if np.count_nonzero(df.growth.to_numpy()) > 0:
             ax.plot(plot_x, plot_y, marker=".", c="orange", label=f"Isoline from DS: $\\gamma={growth_edge}$")
             ax.legend(loc="lower right")
@@ -122,7 +123,7 @@ for ds_cnt, ds in enumerate(datasets):
         ax.set_ylim(y_min, y_max)
         i += 1
 
-    colorbars.append((p, ax))
+    colorbars.append((pcm, ax))
 
 for p_i, ax_i in colorbars:
     figure.colorbar(p_i, ax=ax_i)
